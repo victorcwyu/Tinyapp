@@ -16,6 +16,10 @@ app.set("view engine", "ejs");
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
 
+const cookieParser = require('cookie-parser')
+app.use(cookieParser())
+
+
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
@@ -34,16 +38,17 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { urls: urlDatabase };
+  let templateVars = { username: req.cookies["username"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  res.render("urls_new");
+  let templateVars = { username: req.cookies["username"] };
+  res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -80,6 +85,18 @@ app.post('/urls/:id/update', (req, res) => {
   let long = req.body.newURL
   let editShort = req.params.id
   urlDatabase[editShort] = long;
+  res.redirect('/urls');
+})
+
+//Add an endpoint to handle a POST to /login in your Express server.
+app.post('/login', (req, res) => {
+  let userName = req.body.username;
+  res.cookie('username', userName)
+  res.redirect('/urls');
+})
+
+app.post('/logout', (req, res) => {
+  res.clearCookie('username')
   res.redirect('/urls');
 })
 

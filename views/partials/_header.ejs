@@ -9,6 +9,23 @@
       <div class="navbar-nav">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
+
+
+
+        <!-- In the _header.ejs partial of your app, create a <form> that POSTs to /login. -->
+        <% if(username){ %>
+        <form method="POST" action="/logout">
+          <h3>Logged In As: <%= username %> !</h3>
+          <button type="edit" class="btn btn-primary">Logout</button>
+        </form>
+        <% } else{ %>
+        <form method="POST" action="/login">
+          <input class="form-control" type="text" name="username" placeholder="Username" style="width: 300px; margin: 1em">
+          <button type="edit" class="btn btn-primary">Login</button>
+        </form>
+        <% } %>
+
+
       </div>
     </div>
   </nav>
