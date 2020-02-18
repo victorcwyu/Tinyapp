@@ -1,7 +1,7 @@
 function generateRandomString() {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (var i = 0; i < 7; i++) {
+  for (var i = 0; i < 6; i++) {
     result += characters.charAt(Math.floor(Math.random() * characters.length));
   }
   return result;
@@ -23,10 +23,6 @@ const urlDatabase = {
 
 app.get("/", (req, res) => {
   res.send("Hello!");
-});
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
 });
 
 app.get("/urls.json", (req, res) => {
@@ -52,6 +48,21 @@ app.get("/urls/:shortURL", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body);  // Log the POST request body to the console
-  res.send("Ok");         // Respond with 'Ok' (we will replace this)
+  let long = req.body.longURL
+  // checking for http://
+  // if (long[0] !== "h" && long[1] !== "t" && long[2] !== "t" && long[3] !== "p" && long[4] !== ":" && long[5] !== "/" && long[6] !== "/") {
+  //   res.redirect("/urls/new");
+  // }
+  let tiny = generateRandomString()
+  urlDatabase[tiny] = long;
+  res.redirect(`/urls/${tiny}`);
+});
+
+app.get("/u/:shortURL", (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+});
+
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
 });
