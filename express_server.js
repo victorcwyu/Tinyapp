@@ -63,6 +63,26 @@ app.get("/u/:shortURL", (req, res) => {
   res.redirect(longURL);
 });
 
+// use POST to redirect to edit urls_show page (index)
+app.post('/urls/:id/edit', (req, res) => {
+  let editShort = req.params.id
+  res.redirect(`/urls/${editShort}`);
+})
+
+// use POST to delete a link from database, redirect to refreshed urls page (index)
+app.post('/urls/:id/delete', (req, res) => {
+  delete urlDatabase[req.params.id];
+  res.redirect('/urls');
+})
+
+// use POST to change a longURL for link from database, redirect to refreshed urls page (index)
+app.post('/urls/:id/update', (req, res) => {
+  let long = req.body.newURL
+  let editShort = req.params.id
+  urlDatabase[editShort] = long;
+  res.redirect('/urls');
+})
+
 app.listen(PORT, () => {
   console.log(`Example app listening on port ${PORT}!`);
 });
