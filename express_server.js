@@ -1,3 +1,6 @@
+const getUserByEmail = require('./helpers');
+
+
 function generateRandomString() {
   var result = '';
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -54,14 +57,14 @@ let urlsForUser = id => {
 
 
 
-const getUserByEmail = function (email, database) {
-  for (let i of Object.keys(database)) {
-    if (database[i].email === email) {
-      return database[i];
-    }
-  }
-  return false;
-}
+// const getUserByEmail = function (email, database) {
+//   for (let i of Object.keys(database)) {
+//     if (database[i].email === email) {
+//       return database[i];
+//     }
+//   }
+//   return false;
+// }
 
 
 
