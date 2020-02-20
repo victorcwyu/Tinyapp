@@ -19,22 +19,14 @@ app.use(bodyParser.urlencoded({ extended: false }));
 const cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
+const bcrypt = require('bcrypt');
+
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
   i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
 };
 
 const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "123"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "1234"
-  }
 }
 
 
@@ -71,7 +63,7 @@ const validateEmail = (email) => {
 
 const validatePassword = (email, password) => {
   let user = getUserByEmail(email);
-    if ((user) &&password === user.password) {
+    if ((user) && bcrypt.compareSync(password, user.password)) {
       return true;
     } else {
       return false
@@ -135,7 +127,7 @@ app.post('/urls/:id/edit', (req, res) => {
 
 // use POST to delete a link from database, redirect to refreshed urls page (index)
 app.post('/urls/:id/delete', (req, res) => {
-  if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
+  if (req.cookies.id === urlDatabase[req.params.id].userID) {
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
   } else {
@@ -145,14 +137,26 @@ app.post('/urls/:id/delete', (req, res) => {
 
 // use POST to change a longURL for link from database, redirect to refreshed urls page (index)
 app.post('/urls/:id/update', (req, res) => {
-  if (req.cookies.user_id === undefined || req.cookies.user_id.id !== urlDatabase[req.params.id].userID) {
-    res.sendStatus(res.statusCode = 401);
-  } else if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
+  // if (req.cookies.user_id === undefined || req.cookies.user_id.id !== urlDatabase[req.params.id].userID) {
+  //   res.sendStatus(res.statusCode = 401);
+  // } else if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
+  //   let long = req.body.newURL
+  //   let editShort = req.params.id
+  //   urlDatabase[editShort].longURL = long;
+  //   res.redirect('/urls');
+  // }
+  if (req.cookies.user_id === urlDatabase[req.params.id].userID) {
     let long = req.body.newURL
     let editShort = req.params.id
     urlDatabase[editShort].longURL = long;
     res.redirect('/urls');
+  } else {
+      res.sendStatus(res.statusCode = 401);
   }
+
+
+
+
 })
 
 //Add an endpoint to handle a POST to /login in your Express server.
@@ -172,16 +176,23 @@ app.get('/register', (req, res) => {
 app.post('/register', (req, res) => {
   let newUser = generateRandomString();
   let newEmail = req.body.email;
-  let newPassword = req.body.password;
+  const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
 
-  if (newEmail === "" || newPassword === "" || validateEmail(newEmail) === true) {
+
+  if (newEmail === "" || password === "" || validateEmail(newEmail) === true) {
     res.sendStatus(res.statusCode = 400);
   } else {
-      users[newUser] = { id: `${newUser}`, email: `${newEmail}`, password: `${newPassword}` };
-      res.cookie('user_id', users[newUser])
+      users[newUser] = { id: `${newUser}`, email: `${newEmail}`, password: `${hashedPassword}` };
+      res.cookie('user_id', newUser)
       res.redirect('/urls');
     }
 });
+
+
+
+
+
 
 //returns login page template
 app.get('/login', (req, res) => {
@@ -193,7 +204,7 @@ app.get('/login', (req, res) => {
 app.post('/login', (req, res) => {
   let loginEmail = req.body.email;
   let loginPassword = req.body.password;
-  
+
   if (validateEmail(loginEmail) === false) {
     res.sendStatus(res.statusCode = 403);
   } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === false) {
