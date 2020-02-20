@@ -12,15 +12,17 @@
       </div>
     </div>
         <!-- In the _header.ejs partial of your app, create a <form> that POSTs to /login. -->
-        <% if(username){ %>
+        <% if(user_id){ %>
           <form class="form-inline" method="POST" action="/logout">
-            <h5 style="font-weight:400;margin:0 10px 0 0;">Logged In As: <%= username %> !</h4>
-            <button style="color: black;background-color:transparent;border-color: black;" type="edit" class="btn btn-primary">Logout</button>
+            <h5 style="font-weight:400;margin:0 10px 0 0;">Logged In As: <%= user_id.email %> !</h4>
+            <button style="color:black;background-color:transparent;border-color: black" type="edit" class="btn btn-primary">Logout</button>
           </form>
           <% } else{ %>
-          <form class="form-inline" method="POST" action="/login">
-            <input class="form-control" type="text" name="username" placeholder="Username" style="width: 300px;margin-right:10px;">
-            <button style="color: black;background-color:transparent;border-color: black;"type="edit" class="btn btn-primary">Login</button>
+          <form class="form-inline" method="GET" action="/login">
+            <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit" class="btn btn-primary">Login</button>
+          </form>
+          <form class="form-inline" method="GET" action="/register">
+            <button style="color: rgba(255,255,255,.5);background-color:transparent;border:none;" type="edit" class="btn btn-primary">Register</button>
           </form>
         <% } %>
   </nav>

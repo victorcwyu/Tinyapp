@@ -19,11 +19,51 @@ app.use(bodyParser.urlencoded({ extended: false }));
 const cookieParser = require('cookie-parser')
 app.use(cookieParser())
 
-
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
+
+const users = {
+  "userRandomID": {
+    id: "userRandomID",
+    email: "user@example.com",
+    password: "purple-monkey-dinosaur"
+  },
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
+    password: "dishwasher-funk"
+  }
+}
+
+const getUserByEmail = (email) => {
+  for (let i of Object.keys(users)) {
+    if (users[i].email === email) {
+      return users[i];
+    }
+  }
+  return false;
+}
+
+const validateEmail = (email) => {
+  let user = getUserByEmail(email);
+  if (!user) {
+    return false;
+  } else {
+      return true;
+  }
+};
+
+const validatePassword = (email, password) => {
+  let user = getUserByEmail(email);
+    if ((user) &&password === user.password) {
+      return true;
+    } else {
+      return false
+    }
+};
+
 
 app.get("/", (req, res) => {
   res.send("Hello!");
@@ -38,17 +78,17 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  let templateVars = { username: req.cookies["username"], urls: urlDatabase };
+  let templateVars = { user_id: req.cookies["user_id"], urls: urlDatabase };
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  let templateVars = { username: req.cookies["username"] };
+  let templateVars = { user_id: req.cookies["user_id"] };
   res.render("urls_new", templateVars);
 });
 
 app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { username: req.cookies["username"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
+  let templateVars = { user_id: req.cookies["user_id"], shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL] };
   res.render("urls_show", templateVars);
 });
 
@@ -89,14 +129,58 @@ app.post('/urls/:id/update', (req, res) => {
 })
 
 //Add an endpoint to handle a POST to /login in your Express server.
-app.post('/login', (req, res) => {
-  let userName = req.body.username;
-  res.cookie('username', userName)
-  res.redirect('/urls');
-})
+// app.post('/login', (req, res) => {
+//   let userName = req.body.username;
+//   res.cookie('username', userName)
+//   res.redirect('/urls');
+// })
 
+//returns registration page template
+app.get('/register', (req, res) => {
+  let templateVars = { user_id: req.cookies["user_id"], email: req.body.email, password: req.body.pwd };
+  res.render("urls_register", templateVars);
+});
+
+//creates the endpoint that handles the registration form data
+app.post('/register', (req, res) => {
+  let newUser = generateRandomString();
+  let newEmail = req.body.email;
+  let newPassword = req.body.password;
+
+  if (newEmail === "" || newPassword === "" || validateEmail(newEmail) === true) {
+    res.sendStatus(res.statusCode = 400);
+  } else {
+      users[newUser] = { id: `${newUser}`, email: `${newEmail}`, password: `${newPassword}` };
+      res.cookie('user_id', users[newUser])
+      res.redirect('/urls');
+    }
+});
+
+//returns login page template
+app.get('/login', (req, res) => {
+  let templateVars = { user_id: req.cookies["user_id"], email: req.body.email, password: req.body.pwd };
+  res.render("urls_login", templateVars);
+});
+
+//creates the endpoint that handles the login form data
+app.post('/login', (req, res) => {
+  let loginEmail = req.body.email;
+  let loginPassword = req.body.password;
+  
+  if (validateEmail(loginEmail) === false) {
+    res.sendStatus(res.statusCode = 403);
+  } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === false) {
+    res.sendStatus(res.statusCode = 403);
+  } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === true) {
+    let user = getUserByEmail(loginEmail);
+    res.cookie('user_id', user)
+    res.redirect('/urls');
+  }
+});
+
+// Add an endpoint to handle a POST to /logout in your Express server.
 app.post('/logout', (req, res) => {
-  res.clearCookie('username')
+  res.clearCookie('user_id', users[req.cookies.id])
   res.redirect('/urls');
 })
 
