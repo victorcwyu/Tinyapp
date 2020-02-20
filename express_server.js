@@ -1,4 +1,4 @@
-const getUserByEmail = require('./helpers');
+const { getUserByEmail } = require('./helpers');
 
 
 function generateRandomString() {

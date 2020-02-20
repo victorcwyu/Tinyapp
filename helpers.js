@@ -7,4 +7,4 @@ const getUserByEmail = function (email, database) {
   return false;
 }
 
-module.exports = getUserByEmail;
+module.exports = { getUserByEmail };
