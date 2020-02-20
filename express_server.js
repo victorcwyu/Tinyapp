@@ -28,14 +28,17 @@ const users = {
   "userRandomID": {
     id: "userRandomID",
     email: "user@example.com",
-    password: "purple-monkey-dinosaur"
+    password: "123"
   },
   "user2RandomID": {
     id: "user2RandomID",
     email: "user2@example.com",
-    password: "dishwasher-funk"
+    password: "1234"
   }
 }
+
+
+
 
 let urlsForUser = id => {
   let userURLdatabase = {};
@@ -89,9 +92,8 @@ app.get("/hello", (req, res) => {
 });
 
 app.get("/urls", (req, res) => {
-  //working here
   if (req.cookies.user_id === undefined) {
-    res.redirect("/register");
+    res.redirect("/login");
   } else {
     let templateVars = { user_id: req.cookies["user_id"], urls: urlsForUser(req.cookies.user_id.id) };
     res.render("urls_index", templateVars);
@@ -126,23 +128,31 @@ app.get("/u/:shortURL", (req, res) => {
 
 // use POST to redirect to edit urls_show page (index)
 app.post('/urls/:id/edit', (req, res) => {
-  let editShort = req.params.id
-  res.redirect(`/urls/${editShort}`);
+    let editShort = req.params.id
+    res.redirect(`/urls/${editShort}`);
 })
+
 
 // use POST to delete a link from database, redirect to refreshed urls page (index)
 app.post('/urls/:id/delete', (req, res) => {
-  delete urlDatabase[req.params.id];
-  res.redirect('/urls');
+  if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
+    delete urlDatabase[req.params.id];
+    res.redirect('/urls');
+  } else {
+    res.sendStatus(res.statusCode = 401);
+  }
 })
 
 // use POST to change a longURL for link from database, redirect to refreshed urls page (index)
 app.post('/urls/:id/update', (req, res) => {
-  let long = req.body.newURL
-  let editShort = req.params.id
-  //changed this
-  urlDatabase[editShort].longURL = long;
-  res.redirect('/urls');
+  if (req.cookies.user_id === undefined || req.cookies.user_id.id !== urlDatabase[req.params.id].userID) {
+    res.sendStatus(res.statusCode = 401);
+  } else if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
+    let long = req.body.newURL
+    let editShort = req.params.id
+    urlDatabase[editShort].longURL = long;
+    res.redirect('/urls');
+  }
 })
 
 //Add an endpoint to handle a POST to /login in your Express server.
