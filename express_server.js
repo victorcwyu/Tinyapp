@@ -53,17 +53,20 @@ let urlsForUser = id => {
 };
 
 
-const getUserByEmail = (email) => {
-  for (let i of Object.keys(users)) {
-    if (users[i].email === email) {
-      return users[i];
+
+const getUserByEmail = function (email, database) {
+  for (let i of Object.keys(database)) {
+    if (database[i].email === email) {
+      return database[i];
     }
   }
   return false;
 }
 
+
+
 const validateEmail = (email) => {
-  let user = getUserByEmail(email);
+  let user = getUserByEmail(email, users);
   if (!user) {
     return false;
   } else {
@@ -72,7 +75,7 @@ const validateEmail = (email) => {
 };
 
 const validatePassword = (email, password) => {
-  let user = getUserByEmail(email);
+  let user = getUserByEmail(email, users);
   if ((user) && bcrypt.compareSync(password, user.password)) {
     return true;
   } else {
@@ -208,7 +211,7 @@ app.post('/login', (req, res) => {
   } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === false) {
     res.sendStatus(res.statusCode = 403);
   } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === true) {
-    let user = getUserByEmail(loginEmail);
+    let user = getUserByEmail(loginEmail, users);
     req.session.user_id = ('user_id', user)
     res.redirect('/urls');
   }
