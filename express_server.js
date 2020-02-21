@@ -1,51 +1,46 @@
-const { getUserByEmail } = require('./helpers');
+// GLOBAL CONSTANTS
 
-
-function generateRandomString() {
-  var result = '';
-  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-  for (var i = 0; i < 6; i++) {
-    result += characters.charAt(Math.floor(Math.random() * characters.length));
-  }
-  return result;
-}
-
+// Express server setup
 const express = require("express");
 const app = express();
-const PORT = 8080; // default port 8080
+const PORT = 8080;
 
+// EJS template engine setup
 app.set("view engine", "ejs");
+
+// callback which is called after the app initialization
+app.listen(PORT, () => {
+  console.log(`Example app listening on port ${PORT}!`);
+});
 
 const bodyParser = require("body-parser");
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const cookieSession = require('cookie-session')
-app.use(cookieSession({name: 'user_id', secret: 'abc' }))
+const cookieSession = require('cookie-session');
+app.use(cookieSession({ name: 'user_id', secret: 'abc' }));
 
 const bcrypt = require('bcrypt');
 
-const urlDatabase = {
-  b6UTxQ: { longURL: "https://www.tsn.ca", userID: "userRandomID" },
-  i3BoGr: { longURL: "https://www.google.ca", userID: "user2RandomID" }
+const urlDatabase = {};
+
+const users = {};
+
+const { getUserByEmail } = require('./helpers');
+
+// FUNCTIONS
+
+// generates random string for short URL and user ID
+const generateRandomString = () => {
+  let result = '';
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
 };
 
-const users = {
-  "userRandomID": {
-    id: "userRandomID",
-    email: "user@example.com",
-    password: "123"
-  },
-  "user2RandomID": {
-    id: "user2RandomID",
-    email: "user2@example.com",
-    password: "1234"
-  }
-}
-
-
-
-
-let urlsForUser = id => {
+// filters URL database and creates URL database specifically for logged in user
+const urlsForUser = id => {
   let userURLdatabase = {};
   for (let url in urlDatabase) {
     if (urlDatabase[url].userID === id) {
@@ -55,20 +50,8 @@ let urlsForUser = id => {
   return userURLdatabase;
 };
 
-
-
-// const getUserByEmail = function (email, database) {
-//   for (let i of Object.keys(database)) {
-//     if (database[i].email === email) {
-//       return database[i];
-//     }
-//   }
-//   return false;
-// }
-
-
-
-const validateEmail = (email) => {
+// validates whether a users email is in database
+const validateEmail = email => {
   let user = getUserByEmail(email, users);
   if (!user) {
     return false;
@@ -77,37 +60,38 @@ const validateEmail = (email) => {
   }
 };
 
+// validates whether a users password matches that of the associated email in the database
 const validatePassword = (email, password) => {
   let user = getUserByEmail(email, users);
   if ((user) && bcrypt.compareSync(password, user.password)) {
     return true;
   } else {
-    return false
+    return false;
   }
 };
 
+// ROUTING
 
+// redirects to index page if logged in, otherwise redirects to login page => done
 app.get("/", (req, res) => {
-  res.send("Hello!");
-});
-
-app.get("/urls.json", (req, res) => {
-  res.json(urlDatabase);
-});
-
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
-
-app.get("/urls", (req, res) => {
   if (req.session.user_id === undefined) {
     res.redirect("/login");
+  } else {
+    res.redirect("/urls");
+  }
+});
+
+// renders the index page => done except stretch
+app.get("/urls", (req, res) => {
+  if (req.session.user_id === undefined) {
+    res.sendStatus(res.statusCode = 401);
   } else {
     let templateVars = { user_id: req.session.user_id, urls: urlsForUser(req.session.user_id.id) };
     res.render("urls_index", templateVars);
   }
 });
 
+// renders the create new URL page => done
 app.get("/urls/new", (req, res) => {
   if (req.session.user_id === undefined) {
     res.redirect("/login");
@@ -117,115 +101,114 @@ app.get("/urls/new", (req, res) => {
   }
 });
 
-app.get("/urls/:shortURL", (req, res) => {
-  let templateVars = { user_id: req.session.user_id, shortURL: req.params.shortURL, longURL: urlDatabase[req.params.shortURL].longURL };
-  res.render("urls_show", templateVars);
+// renders the URL show/edit page => done
+app.get("/urls/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.sendStatus(res.statusCode = 404);
+  } else if (req.session.user_id === undefined || req.session.user_id.id !== urlDatabase[req.params.id].userID) {
+    res.sendStatus(res.statusCode = 401);
+  } else {
+    let templateVars = { user_id: req.session.user_id, shortURL: req.params.id, longURL: urlDatabase[req.params.id].longURL };
+    res.render("urls_show", templateVars);
+  }
 });
 
+// redirects user to the long URL => done
+app.get("/u/:id", (req, res) => {
+  if (!urlDatabase[req.params.id]) {
+    res.sendStatus(res.statusCode = 404);
+  } else  {
+    const longURL = urlDatabase[req.params.id].longURL;
+    res.redirect(longURL);
+  }
+});
+
+// adds new URL into database for logged in user => done
 app.post("/urls", (req, res) => {
-  let tiny = generateRandomString()
-  urlDatabase[tiny] = { longURL: req.body.longURL, userID: req.session.user_id.id }
-  res.redirect("/urls")
+  if (req.session.user_id === undefined) {
+    res.sendStatus(res.statusCode = 401);
+    return;
+  } else {
+    let tiny = generateRandomString();
+    urlDatabase[tiny] = { longURL: req.body.longURL, userID: req.session.user_id.id };
+    res.redirect(`/urls/${tiny}`);
+  }
 });
 
-app.get("/u/:shortURL", (req, res) => {
-  //changed this
-  const longURL = urlDatabase[req.params.shortURL].longURL;
-  res.redirect(longURL);
+// changes the longURL from a link in the database and redirects user to refreshed URLs page (index) => done
+app.post('/urls/:id', (req, res) => {
+  if (req.session.user_id === undefined || req.session.user_id.id !== urlDatabase[req.params.id].userID) {
+    res.sendStatus(res.statusCode = 401);
+  } else {
+    let long = req.body.newURL;
+    let editShort = req.params.id;
+    urlDatabase[editShort].longURL = long;
+    res.redirect('/urls');
+  }
 });
 
-// use POST to redirect to edit urls_show page (index)
-app.post('/urls/:id/edit', (req, res) => {
-  let editShort = req.params.id
-  res.redirect(`/urls/${editShort}`);
-})
-
-
-// use POST to delete a link from database, redirect to refreshed urls page (index)
+// deletes a link from database and redirects user to refreshed URLs page (index) => done ***
 app.post('/urls/:id/delete', (req, res) => {
-  if (req.session.user_id.id === urlDatabase[req.params.id].userID) {
+  if ((req.session.user_id) && req.session.user_id.id === urlDatabase[req.params.id].userID) {
     delete urlDatabase[req.params.id];
     res.redirect('/urls');
   } else {
     res.sendStatus(res.statusCode = 401);
   }
-})
-
-// use POST to change a longURL for link from database, redirect to refreshed urls page (index)
-app.post('/urls/:id/update', (req, res) => {
-  if (req.session.user_id === undefined || req.session.user_id.id !== urlDatabase[req.params.id].userID) {
-    res.sendStatus(res.statusCode = 401);
-  } else if (req.cookies.user_id.id === urlDatabase[req.params.id].userID) {
-    let long = req.body.newURL
-    let editShort = req.params.id
-    urlDatabase[editShort].longURL = long;
-    res.redirect('/urls');
-  }
-})
-
-//Add an endpoint to handle a POST to /login in your Express server.
-// app.post('/login', (req, res) => {
-//   let userName = req.body.username;
-//   res.cookie('username', userName)
-//   res.redirect('/urls');
-// })
-
-//returns registration page template
-app.get('/register', (req, res) => {
-  let templateVars = { user_id: req.session.user_id, email: req.body.email, password: req.body.pwd };
-  res.render("urls_register", templateVars);
 });
 
-//creates the endpoint that handles the registration form data
+// renders the registration page if not logged in => done
+app.get('/register', (req, res) => {
+  if (req.session.user_id === undefined) {
+    let templateVars = { user_id: req.session.user_id, email: req.body.email, password: req.body.pwd };
+    res.render("urls_register", templateVars);
+  } else {
+    res.redirect("/urls");
+  }
+});
+
+// creates the endpoint which handles the registration form data, sets a cookie and redirects to the urls (index) page =>done
 app.post('/register', (req, res) => {
   let newUser = generateRandomString();
   let newEmail = req.body.email;
   const password = req.body.password;
   const hashedPassword = bcrypt.hashSync(password, 10);
-
-
   if (newEmail === "" || password === "" || validateEmail(newEmail) === true) {
     res.sendStatus(res.statusCode = 400);
   } else {
     users[newUser] = { id: `${newUser}`, email: `${newEmail}`, password: `${hashedPassword}` };
-    req.session.user_id = ('user_id', users[newUser])
+    req.session.user_id = ('user_id', users[newUser]);
     res.redirect('/urls');
   }
 });
 
-
-
-
-
-
-//returns login page template
+// renders the login page if not logged in => done
 app.get('/login', (req, res) => {
-  let templateVars = { user_id: req.session.user_id, email: req.body.email, password: req.body.pwd };
-  res.render("urls_login", templateVars);
+  if (req.session.user_id === undefined) {
+    let templateVars = { user_id: req.session.user_id, email: req.body.email, password: req.body.pwd };
+    res.render("urls_login", templateVars);
+  } else  {
+    res.redirect("/urls");
+  }
 });
 
-//creates the endpoint that handles the login form data
+// creates the endpoint which handles the login form data, stores a cookie and redirects to the index page => done
 app.post('/login', (req, res) => {
   let loginEmail = req.body.email;
   let loginPassword = req.body.password;
-
   if (validateEmail(loginEmail) === false) {
     res.sendStatus(res.statusCode = 403);
   } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === false) {
     res.sendStatus(res.statusCode = 403);
   } else if (validateEmail(loginEmail) === true && validatePassword(loginEmail, loginPassword) === true) {
     let user = getUserByEmail(loginEmail, users);
-    req.session.user_id = ('user_id', user)
+    req.session.user_id = ('user_id', user);
     res.redirect('/urls');
   }
 });
 
-// Add an endpoint to handle a POST to /logout in your Express server.
+// creates the endpoint which clears the cookie and redirects to the login page => done
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id')
-  res.redirect('/urls');
-})
-
-app.listen(PORT, () => {
-  console.log(`Example app listening on port ${PORT}!`);
+  req.session = null;
+  res.redirect('/login');
 });

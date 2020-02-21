@@ -1,16 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-
   <!-- Bootstrap CSS -->
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css"
     integrity="sha384-GJzZqFGwb1QTTN6wy59ffF1BuGJpLSa9DkKMp0DgiMDm4iYMj70gZWKYbI706tWS" crossorigin="anonymous">
   <title>TinyApp</title>
 </head>
-
 <body>
   <%- include('./partials/_header') %>
   <main style="margin: 1em;">
@@ -29,25 +26,16 @@
         <tr>
           <td><%= url %></td>
           <td><a href="<%= urls[url] %>"><%= urls[url] %></a></td>
-
-
-          <!-- create a button, app.get("/urls", (req, res) etc... gives url values -->
           <td>
-            <form method="POST" action="urls/<%= url %>/edit">
+            <form method="GET" action="urls/<%= url %>">
               <button style="background-color:white;color:#007bff;" type="edit" class="btn btn-primary">Edit</button>
             </form>
           </td>
-          
-          
-
-          <!-- create a button, app.get("/urls", (req, res) etc... gives url values -->
           <td>
             <form method="POST" action="urls/<%= url %>/delete">
               <button style="background-color:white;color:red;border-color:red;" type="delete" class="btn btn-primary">Delete</button>
             </form>
           </td>
-
-
         </tr>
         <% } %>
       </tbody>
@@ -64,5 +52,4 @@
     integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM"
     crossorigin="anonymous"></script>
 </body>
-
 </html>
